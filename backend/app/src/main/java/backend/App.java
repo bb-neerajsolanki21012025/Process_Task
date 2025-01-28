@@ -46,6 +46,7 @@ public class App extends AbstractVerticle{
         .allowedHeader("Authorization"));
 
         router.get("/master").handler(this:: getMaster);
+        router.post("/master").handler(this:: postMaster);
 
         // Create an HTTP server
         vertx.createHttpServer()
@@ -58,6 +59,63 @@ public class App extends AbstractVerticle{
                 }
             });
 
+    }
+
+    private void postMaster(RoutingContext context){
+        HttpMethod method = context.request().method();
+        System.out.println("HTTP method is "+ method);
+
+        context.request().bodyHandler(res->{
+            String cntRcvd = res.toString();
+
+            JsonObject jsonObject = new JsonObject(cntRcvd);
+
+            // System.out.println(jsonObject.);
+
+            String query = "insert into masterTasks ("+
+                                "name,slug,description,help_text,"+
+                                "input_format,output_format,dependent_task_slug,repeats_on,"+
+                                "bulk_input,input_http_method,api_endpoint,api_timeout_in_ms,"+
+                                "response_type,is_json_input_needed,task_type,is_active,is_optional,"+
+                                "eta,service_id,email_list,action)"+"values("+
+                                "'" + jsonObject.getString("name")+ "'"+ ","+
+                                "'" +jsonObject.getString("slug")+ "'"+","+
+                                "'" +jsonObject.getString("description")+"'"+","+
+                                "'" +jsonObject.getString("help_text")+"'"+","+
+                                "'" + jsonObject.getJsonObject("input_format") +"'"+","+
+                                "'" + jsonObject.getJsonObject("output_format")+"'"+","+
+                                "'" +jsonObject.getString("dependent_task_slug")+"'"+","+
+                                jsonObject.getString("repeats_on")+","+
+                                jsonObject.getString("bulk_input")+","+
+                                jsonObject.getString("input_http_method")+","+
+                                "'" +jsonObject.getString("api_endpoint")+"'"+","+
+                                jsonObject.getString("api_timeout_in_ms")+","+
+                                jsonObject.getString("response_type")+","+
+                                jsonObject.getString("is_json_input_needed")+","+
+                                jsonObject.getString("task_type")+","+
+                                jsonObject.getString("is_active")+","+
+                                jsonObject.getString("is_optional")+","+
+                                "'" +jsonObject.getJsonObject("eta")+"'"+","+
+                                jsonObject.getString("service_id")+","+
+                                "'" +jsonObject.getString("email_list")+"'"+","+
+                                "'" +jsonObject.getString("action")+ "'" + ");";   
+            
+            client.query(query,resp->{
+                if(resp.succeeded()){
+                    context.response()
+                    .setStatusCode(200)
+                    .setStatusMessage("ok")
+                    .end("data added");
+                }else{
+                    context.response()
+                    .setStatusCode(500)
+                    .end("Could not add to the database");
+                }
+            });
+        //    JsonObject obj = new JsonObject(jsonObject.getString("output_format"));
+            // System.out.println(obj);
+            // context.response().end(query);
+        });
     }
 
     private void getMaster(RoutingContext context){
@@ -109,8 +167,6 @@ public class App extends AbstractVerticle{
                 .end("database error");
             }
         });
-
-        // context.response().setStatusCode(200).setStatusMessage("ok").end("request success");
     }
 
     public static void main(String[] args) {
