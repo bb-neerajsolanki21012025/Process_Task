@@ -45,14 +45,14 @@ public class App extends AbstractVerticle{
         .allowedHeader("Content-Type")
         .allowedHeader("Authorization"));
 
-        router.get("/master").handler(this:: getMasters); // to get master task templates
+        router.get("/master").handler(this:: getMasters); // to get master task templates'
+        router.get("/master/task/*").handler(this:: getChildTasks);// to get tasks by parent id
         router.get("/master/*").handler(this:: getMaster); // to get a particular master by master id
         router.post("/master").handler(this:: postMaster); // to create master task template
 
         router.post("/task").handler(this:: postTask);  //to create task
         router.get("/task/*").handler(this:: getTask); // to get task by task id(task's id)
         router.put("/task/*").handler(this:: updateTask); // to update task by task id(task's id) (useful in editing)
-        router.get("/master/task/*").handler(this:: getChildTasks);// to get tasks by parent id
         router.delete("/task/*").handler(this::deleteTask); // to delete the task 
 
 
@@ -70,7 +70,7 @@ public class App extends AbstractVerticle{
 
     }
 
-    
+
 
     private void deleteTask(RoutingContext context){
         HttpMethod method = context.request().method();
@@ -188,7 +188,7 @@ public class App extends AbstractVerticle{
             }else{
                 context.response()
                 .setStatusCode(500)
-                .end("database error ");
+                .end("database error getChild");
             }
         });
     }
