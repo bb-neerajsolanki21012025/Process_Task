@@ -130,7 +130,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     try {
       const endpoint = task 
         ? `http://localhost:8080/master/${task.id}`
-        : 'http://localhost:8080/master';
+        : 'http://localhost:8080/task';
 
       const method = task ? 'PUT' : 'POST';
       const body = task 
