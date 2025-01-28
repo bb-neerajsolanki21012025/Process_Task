@@ -9,10 +9,55 @@ import ReactFlow, {
   XYPosition,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { Template, Task } from './types';
+
+// Import the Sidebar component
 import { Sidebar } from './components/Sidebar';
 import { TaskBox } from './components/TaskBox';
 import { TaskForm } from './components/TaskForm';
+
+// Add the buttonStyle export
+export const buttonStyle = {
+  padding: '8px 16px',
+  borderRadius: '4px',
+  border: 'none',
+  color: 'white',
+  cursor: 'pointer',
+  backgroundColor: '#007bff'
+};
+
+// Define the Template interface
+export interface Template {
+  id: string;
+  name: string;
+  description: string;
+  tasks: Task[];
+}
+
+// Define the Task interface
+export interface Task {
+  id: string;
+  label: string;
+  description: string;
+  slug: string;
+  help_text: string;
+  input_format: any;
+  output_format: any;
+  dependent_task_slug: string;
+  repeats_on: number;
+  bulk_input: boolean;
+  input_http_method: number;
+  api_endpoint: string;
+  api_timeout_in_ms: number;
+  response_type: number;
+  is_json_input_needed: boolean;
+  task_type: number;
+  is_active: boolean;
+  is_optional: boolean;
+  eta: any;
+  service_id: number;
+  email_list: string;
+  action: string;
+}
 
 const App: React.FC = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -31,12 +76,10 @@ const App: React.FC = () => {
     try {
       const response = await fetch('http://localhost:8080/master');
       if (!response.ok) {
-        throw new Error('Failed to fetch templates');
+        throw new Error(`Failed to fetch templates: ${response.statusText}`);
       }
       const data = await response.json();
-      console.log('Fetched data:', data); // Add a console log to see the fetched data
-  
-      // Map backend response to the Template format
+
       const templates: Template[] = data.map((item: any) => ({
         id: item.id.toString(),
         name: item.name,
@@ -44,18 +87,36 @@ const App: React.FC = () => {
         tasks: [
           {
             id: item.id.toString(),
-            label: item.name, // Ensure the template name is properly set here
+            label: item.name,
             description: item.description,
+            slug: item.slug,
+            help_text: item.help_text,
+            input_format: item.input_format,
+            output_format: item.output_format,
+            dependent_task_slug: item.dependent_task_slug,
+            repeats_on: item.repeats_on,
+            bulk_input: item.bulk_input,
+            input_http_method: item.input_http_method,
+            api_endpoint: item.api_endpoint,
+            api_timeout_in_ms: item.api_timeout_in_ms,
+            response_type: item.response_type,
+            is_json_input_needed: item.is_json_input_needed,
+            task_type: item.task_type,
+            is_active: item.is_active,
+            is_optional: item.is_optional,
+            eta: item.eta,
+            service_id: item.service_id,
+            email_list: item.email_list,
+            action: item.action
           },
         ],
       }));
-  
-      setMasterTasks(templates); // Update the state with the fetched templates
+
+      setMasterTasks(templates);
     } catch (error) {
       console.error('Error fetching templates:', error);
     }
   }, []);
-  
 
   useEffect(() => {
     fetchTemplates();
@@ -75,31 +136,37 @@ const App: React.FC = () => {
     setShowForm(true);
   }, []);
 
-  const handleFormSave = useCallback((formData: Partial<Task>) => {
-    if (!selectedTemplate) return;
+  const handleFormSave = useCallback(
+    (formData: Partial<Task>) => {
+      if (!selectedTemplate) return;
 
-    setSelectedTemplate((prev) => {
-      if (!prev) return prev;
-      const updatedTasks = editingTask
-        ? prev.tasks.map((t) => (t.id === editingTask.id ? { ...t, ...formData } : t))
-        : [...prev.tasks, { id: Date.now().toString(), ...formData } as Task];
-      return { ...prev, tasks: updatedTasks };
-    });
-    setShowForm(false);
-  }, [selectedTemplate, editingTask]);
+      setSelectedTemplate((prev) => {
+        if (!prev) return prev;
+        const updatedTasks = editingTask
+          ? prev.tasks.map((t) => (t.id === editingTask.id ? { ...t, ...formData } : t))
+          : [...prev.tasks, { id: Date.now().toString(), ...formData } as Task];
+        return { ...prev, tasks: updatedTasks };
+      });
+      setShowForm(false);
+    },
+    [selectedTemplate, editingTask]
+  );
 
-  const handleFormDelete = useCallback((taskId: string) => {
-    if (!selectedTemplate) return;
+  const handleFormDelete = useCallback(
+    (taskId: string) => {
+      if (!selectedTemplate) return;
 
-    setSelectedTemplate((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        tasks: prev.tasks.filter((t) => t.id !== taskId),
-      };
-    });
-    setShowForm(false);
-  }, [selectedTemplate]);
+      setSelectedTemplate((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          tasks: prev.tasks.filter((t) => t.id !== taskId),
+        };
+      });
+      setShowForm(false);
+    },
+    [selectedTemplate]
+  );
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();

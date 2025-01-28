@@ -1,6 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import { Task, Template, Section } from '../types';
-import { buttonStyle } from '../styles';
+
+interface Task {
+  id: string;
+  label: string;
+  description: string;
+  slug: string;
+  help_text: string;
+  input_format: any;
+  output_format: any;
+  dependent_task_slug: string;
+  repeats_on: number;
+  bulk_input: boolean;
+  input_http_method: number;
+  api_endpoint: string;
+  api_timeout_in_ms: number;
+  response_type: number;
+  is_json_input_needed: boolean;
+  task_type: number;
+  is_active: boolean;
+  is_optional: boolean;
+  eta: any;
+  service_id: number;
+  email_list: string;
+  action: string;
+}
+
+interface Template {
+  id: string;
+  name: string;
+  description: string;
+  tasks: Task[];
+}
+
+interface Section {
+  id: string;
+  label: string;
+  type: string;
+  required: boolean;
+  options?: string[];
+}
 
 interface TaskFormProps {
   template: Template;
@@ -10,6 +48,15 @@ interface TaskFormProps {
   onDelete: (taskId: string) => void;
 }
 
+const buttonStyle = {
+  padding: '8px 16px',
+  borderRadius: '4px',
+  border: 'none',
+  color: 'white',
+  cursor: 'pointer',
+  backgroundColor: '#007bff'
+};
+
 export const TaskForm: React.FC<TaskFormProps> = ({
   template,
   task,
@@ -17,115 +64,93 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   onSave,
   onDelete,
 }) => {
-  const [formData, setFormData] = useState<Partial<Task>>(task || {});
+  const [formData, setFormData] = useState<Partial<Task>>({});
   const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(false);
-  const [templates, setTemplates] = useState<Template[]>([]);
 
   useEffect(() => {
-    // Fetch templates from the backend
-    const fetchTemplates = async () => {
-      try {
-        const response = await fetch('http://localhost:8080/master');
-        const data = await response.json();
-        setTemplates(data);
-      } catch (error) {
-        console.error('Error fetching templates:', error);
-      }
-    };
+    // Define form sections
+    const formSections: Section[] = [
+      { id: 'name', label: 'Name', type: 'text', required: true },
+      { id: 'slug', label: 'Slug', type: 'text', required: true },
+      { id: 'description', label: 'Description', type: 'text', required: true },
+      { id: 'help_text', label: 'Help Text', type: 'text', required: true },
+      { id: 'input_format', label: 'Input Format', type: 'json', required: true },
+      { id: 'output_format', label: 'Output Format', type: 'json', required: true },
+      { id: 'dependent_task_slug', label: 'Dependent Task Slug', type: 'text', required: false },
+      { id: 'repeats_on', label: 'Repeats On', type: 'number', required: false },
+      { id: 'bulk_input', label: 'Bulk Input', type: 'select', options: ['TRUE', 'FALSE'], required: false },
+      { id: 'input_http_method', label: 'HTTP Method', type: 'select', options: ['0', '1', '2'], required: true },
+      { id: 'api_endpoint', label: 'API Endpoint', type: 'text', required: true },
+      { id: 'api_timeout_in_ms', label: 'API Timeout (ms)', type: 'number', required: true },
+      { id: 'response_type', label: 'Response Type', type: 'number', required: true },
+      { id: 'is_json_input_needed', label: 'JSON Input Needed', type: 'select', options: ['TRUE', 'FALSE'], required: true },
+      { id: 'task_type', label: 'Task Type', type: 'number', required: true },
+      { id: 'is_active', label: 'Is Active', type: 'select', options: ['TRUE', 'FALSE'], required: true },
+      { id: 'is_optional', label: 'Is Optional', type: 'select', options: ['TRUE', 'FALSE'], required: true },
+      { id: 'eta', label: 'ETA', type: 'json', required: true },
+      { id: 'service_id', label: 'Service ID', type: 'number', required: true },
+      { id: 'email_list', label: 'Email List', type: 'text', required: false },
+      { id: 'action', label: 'Action', type: 'text', required: true }
+    ];
+    setSections(formSections);
 
-    fetchTemplates();
-  }, []);
-
-  useEffect(() => {
-    const fetchSections = async () => {
-      try {
-        const sections = [
-          { id: 'name', label: 'Name', type: 'text', required: true },
-          { id: 'slug', label: 'Slug', type: 'text', required: true },
-          { id: 'description', label: 'Description', type: 'text', required: true },
-          { id: 'help_text', label: 'Help Text', type: 'text', required: true },
-          { id: 'input_format', label: 'Input Format', type: 'json', required: true },
-          { id: 'output_format', label: 'Output Format', type: 'json', required: true },
-          { id: 'dependent_task_slug', label: 'Dependent Task Slug', type: 'text', required: false },
-          { id: 'repeats_on', label: 'Repeats On', type: 'text', required: false },
-          { id: 'bulk_input', label: 'Bulk Input', type: 'text', required: false },
-          {
-            id: 'input_http_method',
-            label: 'HTTP Method',
-            type: 'select',
-            options: ['0', '1', '2'],
-            required: true
-          },
-          { id: 'api_endpoint', label: 'API Endpoint', type: 'text', required: true },
-          { id: 'api_timeout_in_ms', label: 'API Timeout (ms)', type: 'number', required: true },
-          { id: 'response_type', label: 'Response Type', type: 'text', required: true },
-          {
-            id: 'is_json_input_needed',
-            label: 'JSON Input Needed',
-            type: 'select',
-            options: ['TRUE', 'FALSE'],
-            required: true
-          },
-          { id: 'task_type', label: 'Task Type', type: 'text', required: true },
-          {
-            id: 'is_active',
-            label: 'Is Active',
-            type: 'select',
-            options: ['TRUE', 'FALSE'],
-            required: true
-          },
-          {
-            id: 'is_optional',
-            label: 'Is Optional',
-            type: 'select',
-            options: ['TRUE', 'FALSE'],
-            required: true
-          },
-          { id: 'eta', label: 'ETA', type: 'json', required: true },
-          { id: 'service_id', label: 'Service ID', type: 'text', required: true },
-          { id: 'email_list', label: 'Email List', type: 'text', required: false },
-          { id: 'action', label: 'Action', type: 'text', required: true }
-        ];
-
-        setSections(sections);
-
-        // If editing, populate form with template data
-        if (template) {
-          setFormData(template);
-        }
-      } catch (error) {
-        console.error('Error fetching sections:', error);
-      }
-    };
-
-    fetchSections();
-  }, [template]);
+    // Initialize form data with task data if editing
+    if (task) {
+      setFormData({
+        name: task.label,
+        description: task.description,
+        slug: task.slug,
+        help_text: task.help_text,
+        input_format: task.input_format,
+        output_format: task.output_format,
+        dependent_task_slug: task.dependent_task_slug,
+        repeats_on: task.repeats_on,
+        bulk_input: task.bulk_input,
+        input_http_method: task.input_http_method,
+        api_endpoint: task.api_endpoint,
+        api_timeout_in_ms: task.api_timeout_in_ms,
+        response_type: task.response_type,
+        is_json_input_needed: task.is_json_input_needed,
+        task_type: task.task_type,
+        is_active: task.is_active,
+        is_optional: task.is_optional,
+        eta: task.eta,
+        service_id: task.service_id,
+        email_list: task.email_list,
+        action: task.action
+      });
+    }
+  }, [task]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // TODO: Replace with your API endpoints
-      if (task) {
-        // Update existing task
-        await fetch(`/api/tasks/${task.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData)
-        });
-      } else {
-        // Create new task
-        await fetch('/api/tasks', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...formData, templateId: template.id })
-        });
+      const endpoint = task 
+        ? `http://localhost:8080/master/${task.id}`
+        : 'http://localhost:8080/master';
+
+      const method = task ? 'PUT' : 'POST';
+      const body = task 
+        ? formData 
+        : { ...formData, templateId: template.id };
+
+      const response = await fetch(endpoint, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+
       onSave(formData);
     } catch (error) {
       console.error('Error saving task:', error);
+      alert('Failed to save task. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -137,20 +162,28 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     }
 
     try {
-      await fetch(`/api/tasks/${task.id}`, { method: 'DELETE' });
+      const response = await fetch(`http://localhost:8080/master/${task.id}`, { 
+        method: 'DELETE' 
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       onDelete(task.id);
     } catch (error) {
       console.error('Error deleting task:', error);
+      alert('Failed to delete task. Please try again.');
     }
   };
 
   const renderField = (section: Section) => {
-    const value = formData[section.id as keyof Task] || '';
+    const value = formData[section.id as keyof Task];
 
     if (section.type === 'json') {
       return (
         <textarea
-          value={typeof value === 'object' ? JSON.stringify(value, null, 2) : value}
+          value={value ? JSON.stringify(value, null, 2) : ''}
           onChange={e => {
             try {
               const parsed = JSON.parse(e.target.value);
@@ -171,12 +204,18 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         />
       );
     }
-    
+
     if (section.type === 'select') {
+      const selectValue = typeof value === 'boolean' ? (value ? 'TRUE' : 'FALSE') : value?.toString();
       return (
         <select
-          value={value}
-          onChange={e => setFormData({ ...formData, [section.id]: e.target.value })}
+          value={selectValue || ''}
+          onChange={e => {
+            const newValue = e.target.value === 'TRUE' ? true : 
+                           e.target.value === 'FALSE' ? false : 
+                           e.target.value;
+            setFormData({ ...formData, [section.id]: newValue });
+          }}
           style={{
             width: '100%',
             padding: '8px',
@@ -196,8 +235,13 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     return (
       <input
         type={section.type}
-        value={value}
-        onChange={e => setFormData({ ...formData, [section.id]: e.target.value })}
+        value={value !== undefined ? value : ''}
+        onChange={e => {
+          const newValue = section.type === 'number' 
+            ? Number(e.target.value) 
+            : e.target.value;
+          setFormData({ ...formData, [section.id]: newValue });
+        }}
         style={{
           width: '100%',
           padding: '8px',
@@ -309,3 +353,5 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     </div>
   );
 };
+
+export default TaskForm;
