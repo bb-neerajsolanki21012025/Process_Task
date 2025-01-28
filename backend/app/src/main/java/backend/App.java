@@ -72,12 +72,12 @@ public class App extends AbstractVerticle{
 
             // System.out.println(jsonObject.);
 
-            String query = "insert into masterTasks ("+
+            String query = "insert into tasks ("+
                                 "name,slug,description,help_text,"+
                                 "input_format,output_format,dependent_task_slug,repeats_on,"+
                                 "bulk_input,input_http_method,api_endpoint,api_timeout_in_ms,"+
                                 "response_type,is_json_input_needed,task_type,is_active,is_optional,"+
-                                "eta,service_id,email_list,action)"+"values("+
+                                "eta,service_id,email_list,action,parent_id)"+"values("+
                                 "'" + jsonObject.getString("name")+ "'"+ ","+
                                 "'" +jsonObject.getString("slug")+ "'"+","+
                                 "'" +jsonObject.getString("description")+"'"+","+
@@ -98,7 +98,10 @@ public class App extends AbstractVerticle{
                                 "'" +jsonObject.getJsonObject("eta")+"'"+","+
                                 jsonObject.getString("service_id")+","+
                                 "'" +jsonObject.getString("email_list")+"'"+","+
-                                "'" +jsonObject.getString("action")+ "'" + ");";   
+                                "'" +jsonObject.getString("action")+ "'" + ","
+                                +jsonObject.getString("parent_id") + ");";   
+
+            // System.out.println(query);                    
             
             client.query(query,resp->{
                 if(resp.succeeded()){
