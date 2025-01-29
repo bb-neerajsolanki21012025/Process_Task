@@ -30,7 +30,8 @@ export interface Template {
   id: string;
   name: string;
   description: string;
-  tasks: Task[];
+  tasks: Task;
+  parentTaskId?: string; // Add this optional property
 }
 
 // Define the Task interface
@@ -64,9 +65,11 @@ const App: React.FC = () => {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [masterTasks, setMasterTasks] = useState<Template[]>([]);
+  const [childTasks,setChildTasks] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  // const [master, setMaster] = useState<Task | null>(null);
 
   const toggleSidebar = useCallback(() => {
     setIsSidebarOpen((prev) => !prev);
@@ -91,8 +94,8 @@ const App: React.FC = () => {
             description: item.description,
             slug: item.slug,
             help_text: item.help_text,
-            input_format: item.input_format,
-            output_format: item.output_format,
+            input_format: JSON.stringify(item.input_format),
+            output_format: JSON.stringify(item.output_format),
             dependent_task_slug: item.dependent_task_slug,
             repeats_on: item.repeats_on,
             bulk_input: item.bulk_input,
@@ -104,7 +107,7 @@ const App: React.FC = () => {
             task_type: item.task_type,
             is_active: item.is_active,
             is_optional: item.is_optional,
-            eta: item.eta,
+            eta: JSON.stringify(item.eta),
             service_id: item.service_id,
             email_list: item.email_list,
             action: item.action
@@ -122,31 +125,57 @@ const App: React.FC = () => {
     fetchTemplates();
   }, [fetchTemplates]);
 
-  const handleMasterTaskClick = useCallback((template: Template) => {
-    setSelectedTemplate(template);
+  const fetchChildTasks = useCallback(async (parentTaskId: string) => {
+    try {
+      const response = await fetch(`http://localhost:8080/master/task/${parentTaskId}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch child tasks: ${response.statusText}`);
+      }
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching child tasks:', error);
+      return [];
+    }
   }, []);
 
-  const handleCreateTask = useCallback(() => {
-    setEditingTask(null);
+  const handleMasterTaskClick = useCallback(async (template: Template) => {
+    // setIsLoading(true);
+    try {
+      const childTasks = await fetchChildTasks(template.id);
+      setSelectedTemplate({ ...template, tasks: childTasks, parentTaskId: template.id });
+    } catch (error) {
+      console.error('Error in handleMasterTaskClick:', error);
+    } finally {
+      // setIsLoading(false);
+    }
+  }, [fetchChildTasks]);
+
+  const handleCreateTask = useCallback((task: Task) => {
+    setEditingTask(task);
     setShowForm(true);
   }, []);
 
   const handleEditTask = useCallback((task: Task) => {
+    console.log(task);
     setEditingTask(task);
     setShowForm(true);
   }, []);
 
   const handleFormSave = useCallback(
-    (formData: Partial<Task>) => {
+    async (formData: Partial<Task>) => {
       if (!selectedTemplate) return;
 
-      setSelectedTemplate((prev) => {
-        if (!prev) return prev;
-        const updatedTasks = editingTask
-          ? prev.tasks.map((t) => (t.id === editingTask.id ? { ...t, ...formData } : t))
-          : [...prev.tasks, { id: Date.now().toString(), ...formData } as Task];
-        return { ...prev, tasks: updatedTasks };
-      });
+      // setSelectedTemplate((prev) => {
+      //   if (!prev) return prev;
+      //   const updatedTasks = editingTask
+      //     ? prev.tasks.map((t) => (t.id === editingTask.id ? { ...t, ...formData } : t))
+      //     : [...prev.tasks, { id: Date.now().toString(), ...formData } as Task];
+      //   return { ...prev, tasks: updatedTasks };
+      // });
+      const childTasks = await fetchChildTasks(selectedTemplate.id);
+      setSelectedTemplate({ ...selectedTemplate, tasks: childTasks, parentTaskId: selectedTemplate.id });
+
       setShowForm(false);
     },
     [selectedTemplate, editingTask]
@@ -229,8 +258,10 @@ const App: React.FC = () => {
             tasks={selectedTemplate.tasks}
             onCreate={handleCreateTask}
             onEdit={handleEditTask}
+            // master = {master || undefined}
             onClose={() => setSelectedTemplate(null)}
             setNodes={setNodes}
+            parentTaskId={selectedTemplate.parentTaskId}
           />
         )}
 

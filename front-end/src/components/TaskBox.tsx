@@ -5,12 +5,14 @@ import { Node } from 'reactflow';
 
 interface TaskBoxProps {
   template: Template;
-  tasks: Task[];
+  tasks:Task[];
   onCreate: () => void;
   onEdit: (task: Task) => void;
   onClose: () => void;
   setNodes: React.Dispatch<React.SetStateAction<Node[]>>;
+  parentTaskId?:string;
 }
+
 
 export const TaskBox: React.FC<TaskBoxProps> = ({
   template,
@@ -84,7 +86,7 @@ export const TaskBox: React.FC<TaskBoxProps> = ({
                 cursor: 'grab',
               }}
             >
-              {task.label}
+              {task.name}
               <button
                 onClick={() => onEdit(task)}
                 style={buttonStyle}

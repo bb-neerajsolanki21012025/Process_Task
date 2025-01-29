@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 
 interface Task {
   id: string;
-  label: string;
+  name: string;
+  label:string;
   description: string;
   slug: string;
   help_text: string;
@@ -23,6 +24,7 @@ interface Task {
   service_id: number;
   email_list: string;
   action: string;
+  parent_id:number;
 }
 
 interface Template {
@@ -75,12 +77,12 @@ export const TaskForm: React.FC<TaskFormProps> = ({
       { id: 'slug', label: 'Slug', type: 'text', required: true },
       { id: 'description', label: 'Description', type: 'text', required: true },
       { id: 'help_text', label: 'Help Text', type: 'text', required: true },
-      { id: 'input_format', label: 'Input Format', type: 'json', required: true },
-      { id: 'output_format', label: 'Output Format', type: 'json', required: true },
+      { id: 'input_format', label: 'Input Format', type: 'text', required: true },
+      { id: 'output_format', label: 'Output Format', type: 'text', required: true },
       { id: 'dependent_task_slug', label: 'Dependent Task Slug', type: 'text', required: false },
       { id: 'repeats_on', label: 'Repeats On', type: 'number', required: false },
       { id: 'bulk_input', label: 'Bulk Input', type: 'select', options: ['TRUE', 'FALSE'], required: false },
-      { id: 'input_http_method', label: 'HTTP Method', type: 'select', options: ['0', '1', '2'], required: true },
+      { id: 'input_http_method', label: 'HTTP Method', type: 'number', options: ['0', '1', '2'], required: true },
       { id: 'api_endpoint', label: 'API Endpoint', type: 'text', required: true },
       { id: 'api_timeout_in_ms', label: 'API Timeout (ms)', type: 'number', required: true },
       { id: 'response_type', label: 'Response Type', type: 'number', required: true },
@@ -88,7 +90,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
       { id: 'task_type', label: 'Task Type', type: 'number', required: true },
       { id: 'is_active', label: 'Is Active', type: 'select', options: ['TRUE', 'FALSE'], required: true },
       { id: 'is_optional', label: 'Is Optional', type: 'select', options: ['TRUE', 'FALSE'], required: true },
-      { id: 'eta', label: 'ETA', type: 'json', required: true },
+      { id: 'eta', label: 'ETA', type: 'text', required: true },
       { id: 'service_id', label: 'Service ID', type: 'number', required: true },
       { id: 'email_list', label: 'Email List', type: 'text', required: false },
       { id: 'action', label: 'Action', type: 'text', required: true }
@@ -98,12 +100,12 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     // Initialize form data with task data if editing
     if (task) {
       setFormData({
-        name: task.label,
+        name: task.name,
         description: task.description,
         slug: task.slug,
         help_text: task.help_text,
-        input_format: task.input_format,
-        output_format: task.output_format,
+        input_format: JSON.stringify(task.input_format),
+        output_format: JSON.stringify(task.output_format),
         dependent_task_slug: task.dependent_task_slug,
         repeats_on: task.repeats_on,
         bulk_input: task.bulk_input,
@@ -115,7 +117,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         task_type: task.task_type,
         is_active: task.is_active,
         is_optional: task.is_optional,
-        eta: task.eta,
+        eta: JSON.stringify(task.eta),
         service_id: task.service_id,
         email_list: task.email_list,
         action: task.action
@@ -129,19 +131,26 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
     try {
       const endpoint = task 
-        ? `http://localhost:8080/master/${task.id}`
+        ? `http://localhost:8080/task/${task.id}`
         : 'http://localhost:8080/task';
+
+        // console.log(endpoint);
 
       const method = task ? 'PUT' : 'POST';
       const body = task 
         ? formData 
-        : { ...formData, templateId: template.id };
+        : { ...formData, parent_id: template.id};
+
+      // console.log(method);
+      // console.log(body);
+      // console.log(body.output_format);
 
       const response = await fetch(endpoint, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
+      console.log(response);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

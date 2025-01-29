@@ -23,10 +23,10 @@ public class App extends AbstractVerticle{
 
         // ========  connection with database ======== //
         JsonObject config = new JsonObject()
-        .put("url", "jdbc:mysql://localhost:3306/crud_db")  // Database URL
+        .put("url", "jdbc:mysql://localhost:3306/taskdb")  // Database URL
         .put("driver_class", "com.mysql.cj.jdbc.Driver")          // MySQL driver
-        .put("user", "shawon")                                      // Database username
-        .put("password", "1234")                                    // Database password
+        .put("user", "neeraj")                                      // Database username
+        .put("password", "123")                                    // Database password
         .put("max_pool_size", 30);                                 // Max pool size (optional)
 
         // Create JDBC client
@@ -203,14 +203,15 @@ public class App extends AbstractVerticle{
             String extractedPath = path.replaceFirst("^/task/", "");
 
             JsonObject jsonObject = new JsonObject(cntRcvd);
+            System.out.println((new JsonObject(jsonObject.getString("output_format"))).toString());
 
             String query = "update tasks set "+
                            "name = " + "'" + jsonObject.getString("name")+ "',"+
                            "slug = " + "'" +jsonObject.getString("slug")+ "'," +
                            "description =" + "'" +jsonObject.getString("description")+"',"+
                            "help_text =" + "'" +jsonObject.getString("help_text")+"',"+
-                           "input_format ="+"'" + jsonObject.getJsonObject("input_format") +"',"+
-                           "output_format ="+"'" + jsonObject.getJsonObject("output_format")+"',"+
+                           "input_format ="+"'" + (new JsonObject(jsonObject.getString("input_format"))).toString()+"',"+
+                           "output_format ="+"'" + (new JsonObject(jsonObject.getString("output_format"))).toString()+"',"+
                            "dependent_task_slug ="+"'" +jsonObject.getString("dependent_task_slug")+"',"+
                            "repeats_on ="+jsonObject.getString("repeats_on")+","+
                            "bulk_input ="+jsonObject.getString("bulk_input")+","+
@@ -222,11 +223,12 @@ public class App extends AbstractVerticle{
                            "task_type ="+jsonObject.getString("task_type")+","+
                            "is_active ="+jsonObject.getString("is_active")+","+
                            "is_optional ="+jsonObject.getString("is_optional")+","+
-                           "eta ="+"'" +jsonObject.getJsonObject("eta")+"'"+","+
+                           "eta ="+"'" + (new JsonObject(jsonObject.getString("eta"))).toString()+"'"+","+
                            "service_id ="+jsonObject.getString("service_id")+","+
                            "email_list ="+"'" +jsonObject.getString("email_list")+"',"+
                            "action ="+"'" +jsonObject.getString("action") + "'"+
                            " where id = " + extractedPath;
+
 
             client.query(query,resp->{
                 if(resp.succeeded()){
@@ -240,6 +242,8 @@ public class App extends AbstractVerticle{
                     .end("database error");
                 }
             });
+
+            // System.out.println(query);
 
             // context.response().end(query);
         });
@@ -359,8 +363,10 @@ public class App extends AbstractVerticle{
             String cntRcvd = res.toString();
 
             JsonObject jsonObject = new JsonObject(cntRcvd);
+            
+            System.out.println(res);
 
-            // System.out.println(jsonObject.);
+            // System.out.println(jsonObject);
 
             String query = "insert into tasks ("+
                                 "name,slug,description,help_text,"+
@@ -391,7 +397,7 @@ public class App extends AbstractVerticle{
                                 "'" +jsonObject.getString("action")+ "'" + ","
                                 +jsonObject.getString("parent_id") + ");";   
 
-            // System.out.println(query);                    
+            System.out.println();                    
             
             client.query(query,resp->{
                 if(resp.succeeded()){
@@ -407,7 +413,7 @@ public class App extends AbstractVerticle{
             });
         //    JsonObject obj = new JsonObject(jsonObject.getString("output_format"));
             // System.out.println(obj);
-            // context.response().end(query);
+            // context.response().end(res);
         });
     }
 
